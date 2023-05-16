@@ -25,12 +25,26 @@ char *compute_get_request(char *host, char *url, char *query_params,
     compute_message(message, line);
 
     // Step 2: add the host
+    sprintf(line, "Host: %s", host);
+    compute_message(message, line);
+
     // Step 3 (optional): add headers and/or cookies, according to the protocol format
     if (cookies != NULL) {
-       
+       memset(line, 0, LINELEN);
+       strcpy(line, "Cookie: ");
+
+       strcat(line, cookies[0]);
+
+       for (int i = 1; i < cookies_count; i++) {
+           strcat(line, "; ");
+           strcat(line, cookies[i]);
+       }
+       compute_message(message, line);
     }
     // Step 4: add final new line
     compute_message(message, "");
+
+    free(line);
     return message;
 }
 
@@ -46,19 +60,45 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     compute_message(message, line);
     
     // Step 2: add the host
+    sprintf(line, "Host: ");
+    compute_message(message, line);
     /* Step 3: add necessary headers (Content-Type and Content-Length are mandatory)
             in order to write Content-Length you must first compute the message size
     */
+    sprintf(line, "Content-Type: %s", content_type);
+    compute_message(message, line);
+
+    strcpy(body_data_buffer, body_data[0]);
+
+    for (int i = 1; i < body_data_fields_count; i++) {
+        strcat(body_data_buffer, "&");
+        strcat(body_data_buffer, body_data[i]);
+    }
+    
+    int content_length = strlen(body_data_buffer);
+    sprintf(line, "Content-Length: %s", content_length);
+
     // Step 4 (optional): add cookies
     if (cookies != NULL) {
-       
+        memset(line, 0, LINELEN);
+        strcpy(line, "Cookie: ");
+
+        strcat(line, cookies[0]);
+
+        for (int i = 1; i < cookies_count; i++) {
+            strcat(line, "; ");
+            strcat(line, cookies[i]);
+        }
+        compute_message(message, line);
     }
     // Step 5: add new line at end of header
+    compute_message(message, "");
 
     // Step 6: add the actual payload data
     memset(line, 0, LINELEN);
     strcat(message, body_data_buffer);
 
     free(line);
+    // free(body_data_buffer);
     return message;
 }

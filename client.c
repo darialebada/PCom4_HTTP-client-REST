@@ -9,13 +9,17 @@
 #include "helpers.h"
 #include "requests.h"
 
+#define HOST "34.254.242.81"
+#define PORT 8080
+
 int main(int argc, char *argv[])
 {
     char *message;
     char *response;
     int sockfd;
-
         
+    sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+    
     // Ex 1.1: GET dummy from main server
     // Ex 1.2: POST dummy and print response from main server
     // Ex 2: Login into main server
