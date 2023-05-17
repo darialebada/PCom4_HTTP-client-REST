@@ -12,6 +12,14 @@
 #define HOST "34.254.242.81"
 #define PORT 8080
 
+char* get_token(char* js) {
+    char *token = strstr(js, "{\"");
+    strcpy(token, token + 2);
+    token[strlen(token) - 2] = '\0';
+
+    return token;
+}
+
 int main(int argc, char *argv[])
 {
     char *message;

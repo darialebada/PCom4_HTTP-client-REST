@@ -10,7 +10,7 @@
 #include "requests.h"
 
 char *compute_get_request(char *host, char *url, char *query_params,
-                            char **cookies, int cookies_count)
+                          char **cookies, int cookies_count, char *token)
 {
     char *message = calloc(BUFLEN, sizeof(char));
     char *line = calloc(LINELEN, sizeof(char));
@@ -29,6 +29,11 @@ char *compute_get_request(char *host, char *url, char *query_params,
     compute_message(message, line);
 
     // Step 3 (optional): add headers and/or cookies, according to the protocol format
+    if (token != NULL) {
+        sprintf(line, "Authorization: Bearer %s", token);
+        compute_message(message, line);
+    }
+
     if (cookies != NULL) {
        memset(line, 0, LINELEN);
        strcpy(line, "Cookie: ");
@@ -49,7 +54,8 @@ char *compute_get_request(char *host, char *url, char *query_params,
 }
 
 char *compute_post_request(char *host, char *url, char* content_type, char **body_data,
-                            int body_data_fields_count, char **cookies, int cookies_count)
+                            int body_data_fields_count, char **cookies, int cookies_count,
+                            char *token)
 {
     char *message = calloc(BUFLEN, sizeof(char));
     char *line = calloc(LINELEN, sizeof(char));
@@ -78,6 +84,11 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     int content_length = strlen(body_data_buffer);
     sprintf(line, "Content-Length: %s", content_length);
 
+    if (token != NULL) {
+        sprintf(line, "Authorization: Bearer %s", token);
+        compute_message(message, line);
+    }
+
     // Step 4 (optional): add cookies
     if (cookies != NULL) {
         memset(line, 0, LINELEN);
@@ -99,6 +110,6 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     strcat(message, body_data_buffer);
 
     free(line);
-    // free(body_data_buffer);
+    free(body_data_buffer);
     return message;
 }
