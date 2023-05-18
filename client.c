@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 {
     char *message;
     char *response;
+    char *cookies;
     int sockfd;
     int logged_in = 0;
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
             }
         
             if (logged_in == 1) {
-                printf("ERROR: you are already logged in.\n");
+                printf("ERROR: already logged in, disconnect first.\n");
                 continue;
             }
 
@@ -116,6 +117,53 @@ int main(int argc, char *argv[])
             printf("password=");
             fgets(password, MAX_CRED, stdin);
             password[strlen(password) - 1] = '\0';
+
+            // check if data is correct
+            if (!check_spaces(username) || !check_spaces(password)) {
+                printf("ERROR: username and password cannot have any spaces.\n");
+                continue;
+            }
+        
+            if (logged_in == 1) {
+                printf("ERROR: already logged in, disconnect first.\n");
+                continue;
+            }
+
+            // from README - parson
+            JSON_Value *root_value = json_value_init_object();
+            JSON_Object *root_object = json_value_get_object(root_value);
+            json_object_set_string(root_object, "username", username);
+            json_object_set_string(root_object, "password", password);
+            char *json_val = json_serialize_to_string(root_value);
+
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            // compute post request for server
+            message = compute_post_request(HOST, "/api/v1/tema/auth/login", "application/json", &json_val, 1, NULL, 0, NULL);
+
+            // communicate with server
+            send_to_server(sockfd, message);
+
+            response = receive_from_server(sockfd);
+            //puts(response);
+
+            // check error
+            if (strstr(response, "error") != NULL) {
+                printf("400 - Bad Request - Credentials are not good.\n");
+            } else {
+                printf("200 - Ok - User logged in.\n");
+
+                // get cookies
+                cookies = calloc(LINELEN, sizeof(char));
+                char *begin = strstr(response, "connect.sid=");
+                char *end = strstr(response, "Date");
+
+                memcpy(cookies, begin, end - begin);
+            }
+
+            // close connection/ free memory
+            close_connection(sockfd);
+            free_conn(root_value, json_val, message, response);
         }
     }
 

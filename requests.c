@@ -84,7 +84,6 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     int content_length = strlen(body_data_buffer);
     sprintf(line, "Content-Length: %d", content_length);
     compute_message(message, line);
-    
 
     if (token != NULL) {
         sprintf(line, "Authorization: Bearer %s", token);
