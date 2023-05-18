@@ -52,11 +52,17 @@ int main(int argc, char *argv[])
         command[strlen(command) - 1] = '\0';
 
         if (strncmp(command, "exit", 4) == 0) {
+            if (logged_in == 1) {
+                free(cookies);
+            }
             break;
         } else if (strncmp(command, "register", 8) == 0) {
+            if (logged_in == 1) {
+                printf("ERROR: already logged in, disconnect first.\n");
+                continue;
+            }
+
             char username[MAX_CRED], password[MAX_CRED];
-            // memset(username, 0, MAX_CRED);
-            // memset(password, 0, MAX_CRED);
 
             // get data from stdin
             printf("username=");
@@ -70,11 +76,6 @@ int main(int argc, char *argv[])
             // check if data is correct
             if (!check_spaces(username) || !check_spaces(password)) {
                 printf("ERROR: username and password cannot have any spaces.\n");
-                continue;
-            }
-        
-            if (logged_in == 1) {
-                printf("ERROR: already logged in, disconnect first.\n");
                 continue;
             }
 
@@ -107,6 +108,11 @@ int main(int argc, char *argv[])
             close_connection(sockfd);
             free_conn(root_value, json_val, message, response);
         } else if (strncmp(command, "login", 5) == 0) {
+            if (logged_in == 1) {
+                printf("ERROR: already logged in, disconnect first.\n");
+                continue;
+            }
+
             char username[MAX_CRED], password[MAX_CRED];
 
             // get data from stdin
@@ -121,11 +127,6 @@ int main(int argc, char *argv[])
             // check if data is correct
             if (!check_spaces(username) || !check_spaces(password)) {
                 printf("ERROR: username and password cannot have any spaces.\n");
-                continue;
-            }
-        
-            if (logged_in == 1) {
-                printf("ERROR: already logged in, disconnect first.\n");
                 continue;
             }
 
@@ -153,6 +154,8 @@ int main(int argc, char *argv[])
             } else {
                 printf("200 - Ok - User logged in.\n");
 
+                logged_in = 1;
+
                 // get cookies
                 cookies = calloc(LINELEN, sizeof(char));
                 char *begin = strstr(response, "connect.sid=");
@@ -164,11 +167,27 @@ int main(int argc, char *argv[])
             // close connection/ free memory
             close_connection(sockfd);
             free_conn(root_value, json_val, message, response);
+        } else if (strncmp(command, "logout", 6) == 0) {
+            if (logged_in == 0) {
+                printf("400 - Bad Request - You must login first.\n");
+                continue;
+            }
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            message = compute_get_request(HOST, "/api/v1/tema/auth/logout", NULL, &cookies, 1, NULL);
+            send_to_server(sockfd, message);
+            response = receive_from_server(sockfd);
+            logged_in = 0;
+
+            printf("200 - Ok - User logged out.\n");
+
+            // free memory
+            close(sockfd);
+            free(message);
+            free(response);
+            free(cookies);
         }
     }
 
-    // free(message);
-    // free(response);
-    
     return 0;
 }
