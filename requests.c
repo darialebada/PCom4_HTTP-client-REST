@@ -62,18 +62,15 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     char *body_data_buffer = calloc(LINELEN, sizeof(char));
 
     // Step 1: write the method name, URL and protocol type
-    memset(line, 0, LINELEN);
     sprintf(line, "POST %s HTTP/1.1", url);
     compute_message(message, line);
     
     // Step 2: add the host
-    memset(line, 0, LINELEN);
     sprintf(line, "Host: %s", host);
     compute_message(message, line);
     /* Step 3: add necessary headers (Content-Type and Content-Length are mandatory)
             in order to write Content-Length you must first compute the message size
     */
-    memset(line, 0, LINELEN);
     sprintf(line, "Content-Type: %s", content_type);
     compute_message(message, line);
 
@@ -85,7 +82,6 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     }
     
     int content_length = strlen(body_data_buffer);
-    memset(line, 0, LINELEN);
     sprintf(line, "Content-Length: %d", content_length);
     compute_message(message, line);
     

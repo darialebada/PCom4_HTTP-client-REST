@@ -31,6 +31,13 @@ int check_spaces(char *string) {
     return 1;
 }
 
+void free_conn(JSON_Value *root_value, char *json_val, char *message, char *response) {
+    json_free_serialized_string(json_val);
+    json_value_free(root_value);
+    free(message);
+    free(response);
+}
+
 int main(int argc, char *argv[])
 {
     char *message;
@@ -41,25 +48,23 @@ int main(int argc, char *argv[])
     while(1) {
         char command[MAX_CMD];
         fgets(command, MAX_CMD, stdin);
+        command[strlen(command) - 1] = '\0';
 
         if (strncmp(command, "exit", 4) == 0) {
             break;
         } else if (strncmp(command, "register", 8) == 0) {
             char username[MAX_CRED], password[MAX_CRED];
-            memset(username, 0, MAX_CRED);
-            memset(password, 0, MAX_CRED);
+            // memset(username, 0, MAX_CRED);
+            // memset(password, 0, MAX_CRED);
 
             // get data from stdin
             printf("username=");
             fgets(username, MAX_CRED, stdin);
             username[strlen(username) - 1] = '\0';
-            //printf("%s ", username);
 
             printf("password=");
             fgets(password, MAX_CRED, stdin);
             password[strlen(password) - 1] = '\0';
-            //sscanf(password, "%s ")
-            //printf("%s ", password);
 
             // check if data is correct
             if (!check_spaces(username) || !check_spaces(password)) {
@@ -75,36 +80,47 @@ int main(int argc, char *argv[])
             // from README - parson
             JSON_Value *root_value = json_value_init_object();
             JSON_Object *root_object = json_value_get_object(root_value);
-            char *json_val = NULL;
             json_object_set_string(root_object, "username", username);
             json_object_set_string(root_object, "password", password);
-            json_val = json_serialize_to_string(root_value);
+            char *json_val = json_serialize_to_string(root_value);
 
             sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
 
+            // compute post request for server
             message = compute_post_request(HOST, "/api/v1/tema/auth/register", "application/json", &json_val, 1, NULL, 0, NULL);
 
+            // communicate with server
             send_to_server(sockfd, message);
+            // puts(message);
             response = receive_from_server(sockfd);
             //puts(response);
 
+            // check error
+            if (strstr(response, "error") != NULL) {
+                printf("400 - Bad Request - The username %s is already taken.\n", username);
+            } else {
+                printf("201 - Created - User registered.\n");
+            }
+
+            // close connection/ free memory
             close_connection(sockfd);
-            json_free_serialized_string(json_val);
-            json_value_free(root_value);
+            free_conn(root_value, json_val, message, response);
+        } else if (strncmp(command, "login", 5) == 0) {
+            char username[MAX_CRED], password[MAX_CRED];
+
+            // get data from stdin
+            printf("username=");
+            fgets(username, MAX_CRED, stdin);
+            username[strlen(username) - 1] = '\0';
+
+            printf("password=");
+            fgets(password, MAX_CRED, stdin);
+            password[strlen(password) - 1] = '\0';
         }
     }
+
+    // free(message);
+    // free(response);
     
-    // Ex 1.1: GET dummy from main server
-    // Ex 1.2: POST dummy and print response from main server
-    // Ex 2: Login into main server
-    // Ex 3: GET weather key from main server
-    // Ex 4: GET weather data from OpenWeather API
-    // Ex 5: POST weather data for verification to main server
-    // Ex 6: Logout from main server
-
-    // BONUS: make the main server return "Already logged in!"
-
-    // free the allocated data at the end!
-
     return 0;
 }
