@@ -43,8 +43,10 @@ int main(int argc, char *argv[])
     char *message;
     char *response;
     char *cookies;
+    char *token;
     int sockfd;
     int logged_in = 0;
+    int has_token = 0;
 
     while(1) {
         char command[MAX_CMD];
@@ -54,6 +56,9 @@ int main(int argc, char *argv[])
         if (strncmp(command, "exit", 4) == 0) {
             if (logged_in == 1) {
                 free(cookies);
+            }
+            if (has_token == 1) {
+                free(token);
             }
             break;
         } else if (strncmp(command, "register", 8) == 0) {
@@ -93,7 +98,7 @@ int main(int argc, char *argv[])
 
             // communicate with server
             send_to_server(sockfd, message);
-            // puts(message);
+            //puts(message);
             response = receive_from_server(sockfd);
             //puts(response);
 
@@ -179,13 +184,49 @@ int main(int argc, char *argv[])
             response = receive_from_server(sockfd);
             logged_in = 0;
 
-            printf("200 - Ok - User logged out.\n");
+            // double check error
+            if (strstr(response, "error") != NULL) {
+                printf("400 - Bad Request - No user connected. You must login first.\n");
+            } else {
+                printf("200 - Ok - User logged out.\n");
+            }
+
+            if (has_token == 1) {
+                free(token);
+                has_token = 0;
+            }
 
             // free memory
             close(sockfd);
             free(message);
             free(response);
             free(cookies);
+        } else if (strncmp(command, "enter_library", 13) == 0) {
+            if (logged_in == 0) {
+                printf("400 - Bad Request - No user connected. You must login first.\n");
+                continue;
+            }
+
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            message = compute_get_request(HOST, "/api/v1/tema/library/access", NULL, &cookies, 1, NULL);
+            send_to_server(sockfd, message);
+            //puts(message);
+            response = receive_from_server(sockfd);
+            //puts(response);
+
+            if (strstr(response, "error") == NULL) {
+                printf("200 - Ok - Access granted to library.\n");
+
+                has_token = 1;
+                token = calloc(LINELEN, sizeof(char));
+                char *helper = strstr(basic_extract_json_response(response), ":");
+                memcpy(token, helper + 2, strlen(helper) - 4);
+            }
+
+            close(sockfd);
+            free(message);
+            free(response);
         }
     }
 
