@@ -40,34 +40,23 @@ void free_conn(JSON_Value *root_value, char *json_val, char *message, char *resp
 }
 
 void print_books(char *response) {
+    if (response == NULL) {
+        printf("No books available in the library.\n");
+        return;
+    }
     printf("Books available in library:\n");
-    int id;
-    char title[MAX_TITLE];
-    response[strlen(response) - 1] = '\0';
-    printf("%s\n", response);
+    
+    // README parson.h
+    JSON_Value *root_value = json_parse_string(response);
+    JSON_Array *arr = json_value_get_array(root_value);
+    JSON_Object *obj;
 
-    // char *tok = calloc(LINELEN, sizeof(char));
-    // char *tok_begin = strstr(response, "{\"id\":");
-    // char *tok_end;
+    for (int i = 0; i < json_array_get_count(arr); i++) {
+        obj = json_array_get_object(arr, i);
+        printf("ID: %.0f; TITLE: %s\n", json_object_get_number(obj, "id"), json_object_get_string(obj, "title"));
+    }
 
-    // while(tok_begin != NULL) {
-    //     memset(tok, 0, LINELEN);
-    //     memset(title, 0, MAX_TITLE);
-
-    //     tok_end = strstr(response, "},");
-    //     memcpy(tok, tok_begin, tok_end - tok_begin - 1);
-    //     printf("%s\n", tok);
-
-    //     sscanf(tok, "{\"id\":%d,\"title\":\"%s", &id, title);
-
-    //     //printf("%d %s\n", id, title);
-    //     printf("id : %d, title : %s\n", id, title);
-
-    //     strcpy(response, response + (strlen(tok) + 3));
-
-    //     tok_begin = strstr(response, "{\"id\":");
-    // }
-
+    json_value_free(root_value);
 }
 
 int main(int argc, char *argv[])
