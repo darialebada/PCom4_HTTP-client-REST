@@ -15,6 +15,7 @@
 
 #define MAX_CMD 50
 #define MAX_CRED 50
+#define MAX_TITLE 100
 
 char* get_token(char* js) {
     char *token = strstr(js, "{\"");
@@ -36,6 +37,37 @@ void free_conn(JSON_Value *root_value, char *json_val, char *message, char *resp
     json_value_free(root_value);
     free(message);
     free(response);
+}
+
+void print_books(char *response) {
+    printf("Books available in library:\n");
+    int id;
+    char title[MAX_TITLE];
+    response[strlen(response) - 1] = '\0';
+    printf("%s\n", response);
+
+    // char *tok = calloc(LINELEN, sizeof(char));
+    // char *tok_begin = strstr(response, "{\"id\":");
+    // char *tok_end;
+
+    // while(tok_begin != NULL) {
+    //     memset(tok, 0, LINELEN);
+    //     memset(title, 0, MAX_TITLE);
+
+    //     tok_end = strstr(response, "},");
+    //     memcpy(tok, tok_begin, tok_end - tok_begin - 1);
+    //     printf("%s\n", tok);
+
+    //     sscanf(tok, "{\"id\":%d,\"title\":\"%s", &id, title);
+
+    //     //printf("%d %s\n", id, title);
+    //     printf("id : %d, title : %s\n", id, title);
+
+    //     strcpy(response, response + (strlen(tok) + 3));
+
+    //     tok_begin = strstr(response, "{\"id\":");
+    // }
+
 }
 
 int main(int argc, char *argv[])
@@ -223,6 +255,30 @@ int main(int argc, char *argv[])
                 char *helper = strstr(basic_extract_json_response(response), ":");
                 memcpy(token, helper + 2, strlen(helper) - 4);
             }
+
+            close(sockfd);
+            free(message);
+            free(response);
+        } else if (strncmp(command, "get_books", 9) == 0) {
+            if (logged_in == 0) {
+                printf("400 - Bad Request - No user connected. You must login first.\n");
+                continue;
+            }
+            
+            if (has_token == 0) {
+                printf("403 - Forbidden - No authorization.\n");
+                continue;
+            }
+
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            message = compute_get_request(HOST, "/api/v1/tema/library/books", NULL, &cookies, 1, token);
+            send_to_server(sockfd, message);
+            //puts(message);
+            response = receive_from_server(sockfd);
+            //puts(response);
+
+            print_books(strstr(response, "[{"));
 
             close(sockfd);
             free(message);
