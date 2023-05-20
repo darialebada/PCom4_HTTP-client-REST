@@ -78,7 +78,7 @@ check_book(char title[MAX_BOOK], char author[MAX_BOOK], char genre[MAX_BOOK], ch
     if (atoi(page_count) == 0) {
         return 0;
     }
-    // of the next values are to strings
+    // if the next values are strings
     if (atoi(title) != 0) {
         return 0;
     }
