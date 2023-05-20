@@ -66,7 +66,17 @@ void print_books(char *response) {
 }
 
 void print_book(char *response) {
-    printf("%s", response);
+    printf("200 - Ok - Book details are:\n");
+    JSON_Value *root_value = json_parse_string(response);
+
+    printf("ID: %.0f\n", json_object_get_number(json_object(root_value), "id"));
+    printf("TITLE: %s\n", json_object_get_string(json_object(root_value), "title"));
+    printf("AUTHOR: %s\n", json_object_get_string(json_object(root_value), "author"));
+    printf("PUBLISHER: %s\n", json_object_get_string(json_object(root_value), "publisher"));
+    printf("GENRE: %s\n", json_object_get_string(json_object(root_value), "genre"));
+    printf("PAGE_COUNT: %.0f\n", json_object_get_number(json_object(root_value), "page_count"));
+
+    json_value_free(root_value);
 }
 
 int
@@ -416,7 +426,35 @@ int main(int argc, char *argv[])
                 continue;
             }
 
+            char id[MAX_ID];
+            printf("id=");
+            fgets(id, MAX_ID, stdin);
+            id[strlen(id) - 1] = '\0';
 
+            if (atoi(id) == 0) {
+                printf("400 - Bad Request - ID must be a number.\n");
+                continue;
+            }
+
+            char path[] = "/api/v1/tema/library/books/";
+            strcat(path, id);
+
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            message = compute_delete_request(HOST, path, token);
+            send_to_server(sockfd, message);
+            response = receive_from_server(sockfd);
+
+            if (strstr(response, "error") != NULL) {
+                printf("404 - Not Found - There is no book in library with given ID.\n");
+            } else {
+                printf("200 - Ok - Book deleted from library.\n");
+            }
+
+            close(sockfd);
+            free_conn(message, response);
+        } else {
+            printf("Usage: register/ login/ enter_library/ get_books/ get_book/ add_book/ delete_book/ logout/ exit\n");
         }
     }
 

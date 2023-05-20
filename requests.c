@@ -115,4 +115,28 @@ char *compute_post_request(char *host, char *url, char* content_type, char **bod
     return message;
 }
 
+char *compute_delete_request(char *host, char *url, char *token)
+{
+    char *message = calloc(BUFLEN, sizeof(char));
+    char *line = calloc(LINELEN, sizeof(char));
+
+    sprintf(line, "DELETE %s HTTP/1.1", url);
+    compute_message(message, line);
+
+    // Step 2: add the host
+    sprintf(line, "Host: %s", host);
+    compute_message(message, line);
+
+    // Step 3 (optional): add headers and/or cookies, according to the protocol format
+    if (token != NULL) {
+        sprintf(line, "Authorization: Bearer %s", token);
+        compute_message(message, line);
+    }
+
+    // Step 4: add final new line
+    compute_message(message, "");
+
+    free(line);
+    return message;
+}
 
