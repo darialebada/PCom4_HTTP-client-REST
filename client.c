@@ -15,7 +15,8 @@
 
 #define MAX_CMD 50
 #define MAX_CRED 50
-#define MAX_TITLE 100
+#define MAX_BOOK 50
+#define MAX_GENRE 15
 
 char* get_token(char* js) {
     char *token = strstr(js, "{\"");
@@ -32,9 +33,14 @@ int check_spaces(char *string) {
     return 1;
 }
 
-void free_conn(JSON_Value *root_value, char *json_val, char *message, char *response) {
+void free_conn_json(JSON_Value *root_value, char *json_val, char *message, char *response) {
     json_free_serialized_string(json_val);
     json_value_free(root_value);
+    free(message);
+    free(response);
+}
+
+void free_conn(char *message, char *response) {
     free(message);
     free(response);
 }
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
 
             // close connection/ free memory
             close_connection(sockfd);
-            free_conn(root_value, json_val, message, response);
+            free_conn_json(root_value, json_val, message, response);
         } else if (strncmp(command, "login", 5) == 0) {
             if (logged_in == 1) {
                 printf("ERROR: already logged in, disconnect first.\n");
@@ -192,7 +198,7 @@ int main(int argc, char *argv[])
 
             // close connection/ free memory
             close_connection(sockfd);
-            free_conn(root_value, json_val, message, response);
+            free_conn_json(root_value, json_val, message, response);
         } else if (strncmp(command, "logout", 6) == 0) {
             if (logged_in == 0) {
                 printf("400 - Bad Request - You must login first.\n");
@@ -219,8 +225,7 @@ int main(int argc, char *argv[])
 
             // free memory
             close(sockfd);
-            free(message);
-            free(response);
+            free_conn(message, response);
             free(cookies);
         } else if (strncmp(command, "enter_library", 13) == 0) {
             if (logged_in == 0) {
@@ -263,15 +268,43 @@ int main(int argc, char *argv[])
 
             message = compute_get_request(HOST, "/api/v1/tema/library/books", NULL, &cookies, 1, token);
             send_to_server(sockfd, message);
-            //puts(message);
             response = receive_from_server(sockfd);
-            //puts(response);
 
+            //print books info
             print_books(strstr(response, "[{"));
 
             close(sockfd);
-            free(message);
-            free(response);
+            free_conn(message, response);
+        } else if (strncmp(command, "get_book", 8) == 0) {
+
+        } else if (strncmp(command, "add_book", 8) == 0) {
+            char title[MAX_BOOK];
+            char author[MAX_BOOK];
+            char genre[MAX_GENRE];
+            char publisher[MAX_BOOK];
+            int page_count;
+
+            // get data from stdin
+            printf("title=");
+            fgets(title, MAX_BOOK, stdin);
+            title[strlen(title) - 1] = '\0';
+
+            printf("author=");
+            fgets(author, MAX_BOOK, stdin);
+            author[strlen(author) - 1] = '\0';
+
+            printf("genre=");
+            fgets(genre, MAX_GENRE, stdin);
+            genre[strlen(genre) - 1] = '\0';
+
+            printf("publisher=");
+            fgets(publisher, MAX_BOOK, stdin);
+            publisher[strlen(publisher) - 1] = '\0';
+
+            printf("page_count=");
+            scanf("%d", &page_count);
+
+            //printf("Book detailes: %s %s %s %s %d\n", title, author, genre, publisher, page_count);
         }
     }
 
