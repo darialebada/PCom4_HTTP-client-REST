@@ -16,7 +16,7 @@
 #define MAX_CMD 50
 #define MAX_CRED 50
 #define MAX_BOOK 50
-#define MAX_GENRE 15
+#define MAX_ID 15
 
 char* get_token(char* js) {
     char *token = strstr(js, "{\"");
@@ -63,6 +63,32 @@ void print_books(char *response) {
     }
 
     json_value_free(root_value);
+}
+
+void print_book(char *response) {
+    printf("%s", response);
+}
+
+int
+check_book(char title[MAX_BOOK], char author[MAX_BOOK], char genre[MAX_BOOK], char publisher[MAX_BOOK],
+           char page_count[MAX_ID]) {
+    if (atoi(page_count) == 0) {
+        return 0;
+    }
+    if (atoi(title) != 0) {
+        return 0;
+    }
+    if (atoi(author) != 0) {
+        return 0;
+    }
+    if (atoi(genre) != 0) {
+        return 0;
+    }
+    if (atoi(publisher) != 0) {
+        return 0;
+    }
+
+    return 1;
 }
 
 int main(int argc, char *argv[])
@@ -237,9 +263,7 @@ int main(int argc, char *argv[])
 
             message = compute_get_request(HOST, "/api/v1/tema/library/access", NULL, &cookies, 1, NULL);
             send_to_server(sockfd, message);
-            //puts(message);
             response = receive_from_server(sockfd);
-            //puts(response);
 
             if (strstr(response, "error") == NULL) {
                 printf("200 - Ok - Access granted to library.\n");
@@ -276,13 +300,60 @@ int main(int argc, char *argv[])
             close(sockfd);
             free_conn(message, response);
         } else if (strncmp(command, "get_book", 8) == 0) {
+            if (logged_in == 0) {
+                printf("400 - Bad Request - No user connected. You must login first.\n");
+                continue;
+            }
+            
+            if (has_token == 0) {
+                printf("403 - Forbidden - No authorization.\n");
+                continue;
+            }
+
+            char id[MAX_ID];
+            printf("id=");
+            fgets(id, MAX_ID, stdin);
+            id[strlen(id) - 1] = '\0';
+
+            if (atoi(id) == 0) {
+                printf("400 - Bad Request - ID must be a number.\n");
+                continue;
+            }
+
+            char path[] = "/api/v1/tema/library/books/";
+            strcat(path, id);
+
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            message = compute_get_request(HOST, path, NULL, &cookies, 1, token);
+            send_to_server(sockfd, message);
+            response = receive_from_server(sockfd);
+            
+            if (strstr(response, "error") != NULL) {
+                printf("404 - Not Found - There is no book in library with given ID.\n");
+            } else {
+                print_book(strstr(response, "{\"id\""));
+            }
+
+            close(sockfd);
+            free_conn(message, response);
 
         } else if (strncmp(command, "add_book", 8) == 0) {
+            if (logged_in == 0) {
+                printf("400 - Bad Request - No user connected. You must login first.\n");
+                continue;
+            }
+            
+            if (has_token == 0) {
+                printf("403 - Forbidden - No authorization.\n");
+                continue;
+            }
+
             char title[MAX_BOOK];
             char author[MAX_BOOK];
-            char genre[MAX_GENRE];
+            char genre[MAX_BOOK];
             char publisher[MAX_BOOK];
-            int page_count;
+            char page_count[MAX_ID];
 
             // get data from stdin
             printf("title=");
@@ -294,7 +365,7 @@ int main(int argc, char *argv[])
             author[strlen(author) - 1] = '\0';
 
             printf("genre=");
-            fgets(genre, MAX_GENRE, stdin);
+            fgets(genre, MAX_BOOK, stdin);
             genre[strlen(genre) - 1] = '\0';
 
             printf("publisher=");
@@ -302,9 +373,50 @@ int main(int argc, char *argv[])
             publisher[strlen(publisher) - 1] = '\0';
 
             printf("page_count=");
-            scanf("%d", &page_count);
+            fgets(page_count, MAX_ID, stdin);
+            page_count[strlen(page_count) - 1] = '\0';
 
-            //printf("Book detailes: %s %s %s %s %d\n", title, author, genre, publisher, page_count);
+            if (check_book(title, author, genre, publisher, page_count) == 0) {
+                printf("400 - Bad Request - Invalid data.\n");
+                continue;
+            }
+
+            JSON_Value *root_value = json_value_init_object();
+            JSON_Object *root_object = json_value_get_object(root_value);
+            json_object_set_string(root_object, "title", title);
+            json_object_set_string(root_object, "author", author);
+            json_object_set_string(root_object, "genre", genre);
+            json_object_set_number(root_object, "page_count", atoi(page_count));
+            json_object_set_string(root_object, "publisher", publisher);
+            char *json_val = json_serialize_to_string(root_value);
+
+            sockfd = open_connection(HOST, PORT, AF_INET, SOCK_STREAM, 0);
+
+            message = compute_post_request(HOST, "/api/v1/tema/library/books", "application/json", &json_val, 1, NULL, 0, token);
+            send_to_server(sockfd, message);
+            response = receive_from_server(sockfd);
+
+            if (strstr(response, "error") == NULL) {
+                printf("200 - Ok - Book added to library.\n");
+
+            } else {
+                printf("400 - Bad Request\n");
+            }
+
+            close(sockfd);
+            free_conn_json(root_value, json_val, message, response);
+        } else if (strncmp(command, "delete_book", 11) == 0) {
+            if (logged_in == 0) {
+                printf("400 - Bad Request - No user connected. You must login first.\n");
+                continue;
+            }
+            
+            if (has_token == 0) {
+                printf("403 - Forbidden - No authorization.\n");
+                continue;
+            }
+
+
         }
     }
 
