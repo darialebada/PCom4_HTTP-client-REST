@@ -13,9 +13,9 @@
 #define HOST "34.254.242.81"
 #define PORT 8080
 
-#define MAX_CMD 50
+#define MAX_CMD 100
 #define MAX_CRED 50
-#define MAX_BOOK 50
+#define MAX_BOOK 150
 #define MAX_ID 15
 
 int check_spaces(char *string) {
@@ -51,7 +51,7 @@ void print_books(char *response) {
 
     for (int i = 0; i < json_array_get_count(arr); i++) {
         obj = json_array_get_object(arr, i);
-        printf("ID: %.0f; TITLE: %s\n", json_object_get_number(obj, "id"), json_object_get_string(obj, "title"));
+        printf("id: %.0f; title: %s\n", json_object_get_number(obj, "id"), json_object_get_string(obj, "title"));
     }
 
     json_value_free(root_value);
@@ -61,12 +61,12 @@ void print_book(char *response) {
     printf("200 - Ok - Book details are:\n");
     JSON_Value *root_value = json_parse_string(response);
 
-    printf("ID: %.0f\n", json_object_get_number(json_object(root_value), "id"));
-    printf("TITLE: %s\n", json_object_get_string(json_object(root_value), "title"));
-    printf("AUTHOR: %s\n", json_object_get_string(json_object(root_value), "author"));
-    printf("PUBLISHER: %s\n", json_object_get_string(json_object(root_value), "publisher"));
-    printf("GENRE: %s\n", json_object_get_string(json_object(root_value), "genre"));
-    printf("PAGE_COUNT: %.0f\n", json_object_get_number(json_object(root_value), "page_count"));
+    printf("id: %.0f\n", json_object_get_number(json_object(root_value), "id"));
+    printf("title: %s\n", json_object_get_string(json_object(root_value), "title"));
+    printf("author: %s\n", json_object_get_string(json_object(root_value), "author"));
+    printf("publisher: %s\n", json_object_get_string(json_object(root_value), "publisher"));
+    printf("genre: %s\n", json_object_get_string(json_object(root_value), "genre"));
+    printf("page_count: %.0f\n", json_object_get_number(json_object(root_value), "page_count"));
 
     json_value_free(root_value);
 }
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         fgets(command, MAX_CMD, stdin);
         command[strlen(command) - 1] = '\0';
 
-        if (strncmp(command, "exit", 4) == 0) {
+        if (strcmp(command, "exit\0") == 0) {
             // free any remained allocated memory
             if (logged_in == 1) {
                 free(cookies);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
                 free(token);
             }
             break;
-        } else if (strncmp(command, "register", 8) == 0) {
+        } else if (strcmp(command, "register\0") == 0) {
             // check if user is already connected
             if (logged_in == 1) {
                 printf("ERROR: already logged in, disconnect first.\n");
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
             // close connection/ free memory
             close_connection(sockfd);
             free_conn_json(root_value, json_val, message, response);
-        } else if (strncmp(command, "login", 5) == 0) {
+        } else if (strcmp(command, "login\0") == 0) {
             // check if user is already connected
             if (logged_in == 1) {
                 printf("ERROR: already logged in, disconnect first.\n");
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
             // close connection/ free memory
             close_connection(sockfd);
             free_conn_json(root_value, json_val, message, response);
-        } else if (strncmp(command, "logout", 6) == 0) {
+        } else if (strcmp(command, "logout\0") == 0) {
             // check if user is already connected
             if (logged_in == 0) {
                 printf("400 - Bad Request - You must login first.\n");
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
             close(sockfd);
             free(cookies);
             free_conn(message, response);
-        } else if (strncmp(command, "enter_library", 13) == 0) {
+        } else if (strcmp(command, "enter_library\0") == 0) {
             // check if user is already connected
             if (logged_in == 0) {
                 printf("400 - Bad Request - No user connected. You must login first.\n");
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
             close(sockfd);
             free(message);
             free(response);
-        } else if (strncmp(command, "get_books", 9) == 0) {
+        } else if (strcmp(command, "get_books\0") == 0) {
             // check if user is already connected
             if (logged_in == 0) {
                 printf("400 - Bad Request - No user connected. You must login first.\n");
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
             // close connection/ free memory
             close(sockfd);
             free_conn(message, response);
-        } else if (strncmp(command, "get_book", 8) == 0) {
+        } else if (strcmp(command, "get_book\0") == 0) {
             // check if user is already connected
             if (logged_in == 0) {
                 printf("400 - Bad Request - No user connected. You must login first.\n");
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
             // close connection/ free memory
             close(sockfd);
             free_conn(message, response);
-        } else if (strncmp(command, "add_book", 8) == 0) {
+        } else if (strcmp(command, "add_book\0") == 0) {
             // check if user is already connected
             if (logged_in == 0) {
                 printf("400 - Bad Request - No user connected. You must login first.\n");
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
             // close connection/ free memory
             close(sockfd);
             free_conn_json(root_value, json_val, message, response);
-        } else if (strncmp(command, "delete_book", 11) == 0) {
+        } else if (strcmp(command, "delete_book\0") == 0) {
             // check if user is already connected
             if (logged_in == 0) {
                 printf("400 - Bad Request - No user connected. You must login first.\n");
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
             free_conn(message, response);
         } else {
             // invalid command
-            printf("ERROR: Usage: register - login - enter_library - get_books - get_book - add_book - delete_book - logout - exit\n");
+            printf("ERROR - Usage: register - login - enter_library - get_books - get_book - add_book - delete_book - logout - exit\n");
         }
     }
 

@@ -47,7 +47,11 @@ utilizatorul detine unul).
 
 ## Parsare JSON
 Am ales sa folosesc biblioteca parson, deoarece mi s-a parut cea mai usoara varianta. M-a ajutat foarte
-mult README-ul pentru biblioteca pentru realizarea parsarilor.
+mult README-ul pentru biblioteca pentru realizarea parsarilor. Pentru a transforma mesajul pe care il
+trimit catre server in format JSON utilizez json_value_init_object() pentru a initializa un obiect, apoi
+setez valorile pe care vreau sa le adaug (conform explicatiilor din README). Pentru conversia inversa
+(preluarea datelor din JSON-ul primit de la server) folosesc functia json_parse_string(), apoi preiau valorile
+cu get (conform explicatiilor din README).
 
 # Observatii
 A fost o tema foarte interesanta. Dupa ce am facut prima comanda si m-am documentat despre biblioteca
