@@ -1,9 +1,8 @@
 ### Lebada Daria-Cristiana - 323CA
 # PCom tema4 - Client web. Comunicatie cu REST API
 
-## Functionare aplicatie
-Am folosit scheletul de la laboratorul 9 pentru implementarea temei, alaturi de explicatiile din
-laborator. Pentru parsarea JSON am ales biblioteca parson. 
+## Scopul 
+Implementarea unui client web in C care sa interactioneze cu un REST API.
 
 ## Adaptare request.c
 Am completat request.c conform explicatiilor din comentarii, respectand formatul cererii.
